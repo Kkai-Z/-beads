@@ -341,7 +341,7 @@ const mardColors = [
 ];
 
 // 排序（系列内按编号）
-mardcolors.sort((a,b)=>{
+mardColors.sort((a,b)=>{
   if(a.series!==b.series) return a.series.localeCompare(b.series);
   const numA = parseInt(a.code.match(/\d+/)[0]);
   const numB = parseInt(b.code.match(/\d+/)[0]);
@@ -350,7 +350,7 @@ mardcolors.sort((a,b)=>{
 
 // ====== 初始化计数 ======
 const counts = {};
-mardcolors.forEach(c=>counts[c.code]=0);
+mardColors.forEach(c=>counts[c.code]=0);
 
 const palette = document.getElementById("palette");
 const stats = document.getElementById("stats");
@@ -359,7 +359,7 @@ const stats = document.getElementById("stats");
 function renderPalette(){
   palette.innerHTML = "";
   let currentSeries = "";
-  mardcolors.forEach(c=>{
+  mardColors.forEach(c=>{
     if(c.series!==currentSeries){
       const h3 = document.createElement("h3");
       h3.innerText = c.series;
@@ -440,7 +440,7 @@ function saveBatch(){
 // ====== 导出 Excel (CSV) ======
 function exportExcel(){
   let csv = "编号,数量,HEX\n";
-  mardcolors.forEach(c=>{
+  mardColors.forEach(c=>{
     csv += `${c.code},${counts[c.code]},${c.hex}\n`;
   });
   const blob = new Blob([csv], {type: "text/csv;charset=utf-8"});
