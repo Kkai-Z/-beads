@@ -1,1 +1,102 @@
-<!DOCTYPE html>\n<html lang="en">\n<head>\n    <meta charset="UTF-8">\n    <meta name="viewport" content="width=device-width, initial-scale=1.0">\n    <title>拼豆计数工具</title>\n    <style>\n        body { font-family: Arial, sans-serif; }\n        #result { margin-top: 20px; }\n    </style>\n</head>\n<body>\n    <h1>拼豆计数工具</h1>\n    <input type="number" id="inputCount" placeholder="输入拼豆数量">\n    <button id="calculate">计算</button>\n    <div id="result"></div>\n    <script>\n        document.getElementById('calculate').addEventListener('click', function() {\n            const count = document.getElementById('inputCount').value;\n            const result = count * 5; // 示例逻辑\n            document.getElementById('result').innerText = `总数: ${result}`;\n        });\n    <\/script>\n</body>\n</html>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>拼豆计数工具</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <h1>拼豆计数工具</h1>
+    <div id="app">
+        <input type="file" id="fileInput" />
+        <button id="exportBtn">导出到Excel</button>
+        <table id="colorTable">
+            <thead>
+                <tr>
+                    <th>颜色</th>
+                    <th>数量</th>
+                </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+        <button id="batchEditBtn">批量编辑</button>
+        <div id="batchEditModal" style="display:none;">
+            <h2>批量编辑</h2>
+            <input type="text" id="newColor" placeholder="新颜色" />
+            <input type="number" id="newCount" placeholder="数量" />
+            <button id="saveBatchBtn">保存</button>
+        </div>
+    </div>
+    <script>
+        const colors = {};
+
+        document.getElementById('fileInput').addEventListener('change', handleFileSelect);
+        document.getElementById('exportBtn').addEventListener('click', exportToExcel);
+        document.getElementById('batchEditBtn').addEventListener('click', toggleBatchEdit);
+        document.getElementById('saveBatchBtn').addEventListener('click', saveBatchEdit);
+
+        function handleFileSelect(event) {
+            const file = event.target.files[0];
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const contents = e.target.result;
+                parseFileContents(contents);
+            };
+            reader.readAsText(file);
+        }
+
+        function parseFileContents(contents) {
+            const lines = contents.split('\n');
+            lines.forEach(line => {
+                const [color, count] = line.split(',');
+                if (color && count) {
+                    colors[color.trim()] = (colors[color.trim()] || 0) + parseInt(count.trim(), 10);
+                }
+            });
+            updateTable();
+        }
+
+        function updateTable() {
+            const tbody = document.querySelector('#colorTable tbody');
+            tbody.innerHTML = '';
+            Object.keys(colors).forEach(color => {
+                const row = tbody.insertRow();
+                row.insertCell(0).innerText = color;
+                row.insertCell(1).innerText = colors[color];
+            });
+        }
+
+        function toggleBatchEdit() {
+            const modal = document.getElementById('batchEditModal');
+            modal.style.display = modal.style.display === 'none' ? 'block' : 'none';
+        }
+
+        function saveBatchEdit() {
+            const newColor = document.getElementById('newColor').value.trim();
+            const newCount = parseInt(document.getElementById('newCount').value.trim(), 10);
+            if (newColor && !isNaN(newCount)) {
+                colors[newColor] = (colors[newColor] || 0) + newCount;
+                updateTable();
+                toggleBatchEdit();
+            }
+        }
+
+        function exportToExcel() {
+            let csvContent = 'data:text/csv;charset=utf-8,';
+            csvContent += '颜色,数量\n';
+            Object.keys(colors).forEach(color => {
+                csvContent += `${color},${colors[color]}\n`;
+            });
+
+            const encodedUri = encodeURI(csvContent);
+            const link = document.createElement('a');
+            link.setAttribute('href', encodedUri);
+            link.setAttribute('download', '拼豆计数工具数据.csv');
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+    </script>
+</body>
+</html>
