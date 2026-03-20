@@ -1,7 +1,1 @@
-git clone https://github.com/Kkai-Z/-beads.git
-cd -beads
-# Copy the corrected HTML code into index.html
-# Then:
-git add index.html
-git commit -m "Add complete 拼豆计数工具 application"
-git push origin main
+<!DOCTYPE html>\n<html lang="en">\n<head>\n    <meta charset="UTF-8">\n    <meta name="viewport" content="width=device-width, initial-scale=1.0">\n    <title>拼豆计数工具</title>\n    <style>\n        body { font-family: Arial, sans-serif; }\n        #result { margin-top: 20px; }\n    </style>\n</head>\n<body>\n    <h1>拼豆计数工具</h1>\n    <input type="number" id="inputCount" placeholder="输入拼豆数量">\n    <button id="calculate">计算</button>\n    <div id="result"></div>\n    <script>\n        document.getElementById('calculate').addEventListener('click', function() {\n            const count = document.getElementById('inputCount').value;\n            const result = count * 5; // 示例逻辑\n            document.getElementById('result').innerText = `总数: ${result}`;\n        });\n    <\/script>\n</body>\n</html>
