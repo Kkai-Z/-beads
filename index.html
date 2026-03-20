@@ -5,15 +5,16 @@
 <title>拼豆计数工具</title>
 <style>
 body { font-family: Arial; padding: 20px; }
-h2, h3 { margin-bottom: 10px; }
-.palette { display: grid; grid-template-columns: repeat(auto-fill, 140px); gap: 10px; }
-.color { display: flex; align-items: center; border: 1px solid #ccc; padding: 5px; }
-.box { width: 30px; height: 30px; margin-right: 8px; border: 1px solid #999; cursor: default; }
-.text { font-size: 12px; width: 60px; }
-input { width: 50px; }
+h2, h3 { margin-bottom: 10px; margin-top: 30px; }
+.palette { display: flex; flex-wrap: wrap; gap: 15px; }
+.series-title { width: 100%; font-size: 20px; margin-top: 20px; margin-bottom: 10px; }
+.color { display: flex; flex-direction: column; align-items: center; width: 120px; }
+.box { width: 80px; height: 80px; border: 1px solid #999; margin-bottom: 5px; cursor: default; }
+.hex-text { font-size: 12px; }
+input { width: 60px; margin-top: 5px; }
 .stats { margin-top: 20px; }
 button { margin: 5px; padding: 5px 8px; cursor: pointer; }
-#batchModal { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: #fff; border: 2px solid #333; padding: 15px; max-height: 80%; overflow-y: auto; z-index: 100; width: 300px; }
+#batchModal { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: #fff; border: 2px solid #333; padding: 15px; max-height: 80%; overflow-y: auto; z-index: 100; width: 350px; }
 #overlay { display: none; position: fixed; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.3); z-index: 50; }
 textarea { width: 100%; }
 </style>
@@ -24,7 +25,7 @@ textarea { width: 100%; }
 <button onclick="openBatchModal()">批量修改数量</button>
 <button onclick="exportExcel()">导出 Excel</button>
 
-<div class="palette" id="palette"></div>
+<div id="palette-container"></div>
 
 <h3>统计</h3>
 <ul id="stats"></ul>
@@ -59,12 +60,28 @@ mardColors.sort((a, b) => {
 const counts = {};
 mardColors.forEach(c => counts[c.code] = 0);
 
-// ==== 渲染 ====
-const palette = document.getElementById("palette");
-const stats = document.getElementById("stats");
-function renderPalette(){
-  palette.innerHTML = "";
+// 渲染
+function renderPalette() {
+  const container = document.getElementById("palette-container");
+  container.innerHTML = "";
+  let currentSeries = "";
+  let rowDiv = null;
+  let rowCount = 0;
+
   mardColors.forEach(c => {
+    // 系列标题
+    if(c.code[0] !== currentSeries) {
+      currentSeries = c.code[0];
+      const title = document.createElement("div");
+      title.className = "series-title";
+      title.textContent = `${currentSeries} 系列`;
+      container.appendChild(title);
+      rowDiv = document.createElement("div");
+      rowDiv.className = "palette";
+      container.appendChild(rowDiv);
+      rowCount = 0;
+    }
+
     const div = document.createElement("div");
     div.className = "color";
 
@@ -73,19 +90,28 @@ function renderPalette(){
     box.style.background = c.hex;
     box.title = c.code + " " + c.hex;
 
-    const text = document.createElement("div");
-    text.className = "text";
-    text.innerHTML = `<b>${c.code}</b><br>${c.hex}`;
+    const hexText = document.createElement("div");
+    hexText.className = "hex-text";
+    hexText.textContent = c.hex;
 
     const input = document.createElement("input");
     input.type = "number";
     input.value = counts[c.code];
-    input.oninput = ()=>{ counts[c.code] = parseInt(input.value)||0; updateStats(); };
+    input.oninput = () => { counts[c.code] = parseInt(input.value)||0; updateStats(); };
 
     div.appendChild(box);
-    div.appendChild(text);
+    div.appendChild(hexText);
     div.appendChild(input);
-    palette.appendChild(div);
+    rowDiv.appendChild(div);
+
+    rowCount++;
+    // 每行最多5个
+    if(rowCount >= 5){
+      rowDiv = document.createElement("div");
+      rowDiv.className = "palette";
+      container.appendChild(rowDiv);
+      rowCount = 0;
+    }
   });
 }
 
