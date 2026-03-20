@@ -290,3 +290,4 @@ const mardColors = [
   {code:"ZG6",hex:"#94BFE2"},
   {code:"ZG7",hex:"#E2A9D2"},
   {code:"ZG8",hex:"#AB91C0"}
+  ];
