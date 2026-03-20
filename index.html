@@ -4,10 +4,12 @@
 <meta charset="UTF-8">
 <title>拼豆计数工具</title>
 <style>
-body { font-family: Arial; padding: 20px; }
-h2, h3 { margin-bottom: 10px; margin-top: 30px; }
-.palette { display: flex; flex-wrap: wrap; gap: 15px; }
-.series-title { width: 100%; font-size: 20px; margin-top: 20px; margin-bottom: 10px; }
+body { font-family: Arial; padding: 20px; display: flex; justify-content: center; }
+.container { max-width: 900px; width: 100%; }
+h2, h3 { margin-bottom: 10px; margin-top: 20px; text-align: center; }
+.low-stock { color: red; font-weight: bold; text-align: center; margin-bottom: 20px; }
+.palette { display: flex; flex-wrap: wrap; gap: 15px; justify-content: flex-start; }
+.series-title { width: 100%; font-size: 20px; margin-top: 20px; margin-bottom: 10px; text-align: left; }
 .color { display: flex; flex-direction: column; align-items: center; width: 120px; }
 .box { width: 80px; height: 80px; border: 1px solid #999; margin-bottom: 5px; cursor: default; }
 .hex-text { font-size: 12px; }
@@ -21,22 +23,28 @@ textarea { width: 100%; }
 </head>
 <body>
 
-<h2>拼豆计数工具</h2>
-<button onclick="openBatchModal()">批量修改数量</button>
-<button onclick="exportExcel()">导出 Excel</button>
+<div class="container">
+  <h2>拼豆计数工具</h2>
+  <div class="low-stock" id="lowStock"></div>
+  <div style="text-align:center;">
+    <button onclick="openBatchModal()">批量修改数量</button>
+    <button onclick="clearAll()">清空所有数量</button>
+    <button onclick="exportExcel()">导出 Excel</button>
+  </div>
 
 <div id="palette-container"></div>
 
 <h3>统计</h3>
-<ul id="stats"></ul>
+  <ul id="stats"></ul>
 
-<div id="overlay"></div>
-<div id="batchModal">
-  <h3>批量修改数量</h3>
-  <p>输入颜色编号和数量（例如：A1 120, B3 45）每行一个</p>
-  <textarea id="batchInput" rows="8"></textarea><br>
-  <button onclick="saveBatch()">保存</button>
-  <button onclick="closeBatchModal()">取消</button>
+  <div id="overlay"></div>
+  <div id="batchModal">
+    <h3>批量修改数量</h3>
+    <p>输入颜色编号和数量（例如：A1 10, B3 -5）每行一个，加号为增加，减号为减少</p>
+    <textarea id="batchInput" rows="8"></textarea><br>
+    <button onclick="saveBatch()">保存</button>
+    <button onclick="closeBatchModal()">取消</button>
+  </div>
 </div>
 
 <!-- 引入你的完整颜色文件 -->
@@ -56,10 +64,118 @@ mardColors.sort((a, b) => {
   return a.code.localeCompare(b.code);
 });
 
-// ==== 初始化计数 ====
+// 初始化计数
 const counts = {};
-mardColors.forEach(c => counts[c.code] = 0);
+mardColors.forEach(c=>counts[c.code]=0);
 
+function renderPalette() {
+  const container = document.getElementById("palette-container");
+  container.innerHTML = "";
+  let currentSeries="";
+  let rowDiv=null;
+  let rowCount=0;
+
+  mardColors.forEach(c=>{
+    if(c.code[0]!==currentSeries){
+      currentSeries=c.code[0];
+      const title=document.createElement("div");
+      title.className="series-title";
+      title.textContent=`${currentSeries} 系列`;
+      container.appendChild(title);
+      rowDiv=document.createElement("div");
+      rowDiv.className="palette";
+      container.appendChild(rowDiv);
+      rowCount=0;
+    }
+
+    const div=document.createElement("div");
+    div.className="color";
+
+    const box=document.createElement("div");
+    box.className="box";
+    box.style.background=c.hex;
+    box.title=c.code + " " + c.hex;
+
+    const hexText=document.createElement("div");
+    hexText.className="hex-text";
+    hexText.textContent=c.hex;
+
+    const input=document.createElement("input");
+    input.type="number";
+    input.value=counts[c.code];
+    input.oninput=()=>{ counts[c.code]=parseInt(input.value)||0; updateStats(); checkLowStock(); };
+
+    div.appendChild(box);
+    div.appendChild(hexText);
+    div.appendChild(input);
+    rowDiv.appendChild(div);
+
+    rowCount++;
+    if(rowCount>=5){
+      rowDiv=document.createElement("div");
+      rowDiv.className="palette";
+      container.appendChild(rowDiv);
+      rowCount=0;
+    }
+  });
+}
+
+function updateStats(){
+  const stats=document.getElementById("stats");
+  stats.innerHTML="";
+  Object.keys(counts).forEach(key=>{
+    if(counts[key]>0){
+      const li=document.createElement("li");
+      li.innerText=`${key}: ${counts[key]}`;
+      stats.appendChild(li);
+    }
+  });
+}
+
+// 低于200提示
+function checkLowStock(){
+  const lowStock=document.getElementById("lowStock");
+  const low=[];
+  Object.keys(counts).forEach(k=>{
+    if(counts[k]<200){
+      low.push(k);
+    }
+  });
+  lowStock.textContent = low.length>0 ? "数量低于200的颜色: "+low.join(", ") : "";
+}
+
+// 批量修改，加减模式
+function openBatchModal(){
+  document.getElementById("batchInput").value="";
+  document.getElementById("overlay").style.display="block";
+  document.getElementById("batchModal").style.display="block";
+}
+function closeBatchModal(){
+  document.getElementById("overlay").style.display="none";
+  document.getElementById("batchModal").style.display="none";
+}
+function saveBatch(){
+  const lines=document.getElementById("batchInput").value.trim().split("\n");
+  lines.forEach(line=>{
+    const parts=line.split(/\s+/);
+    if(parts.length==2 && parts[0] in counts){
+      counts[parts[0]] += parseInt(parts[1]) || 0;
+      if(counts[parts[0]]<0) counts[parts[0]]=0;
+    }
+  });
+  renderPalette();
+  updateStats();
+  checkLowStock();
+  closeBatchModal();
+}
+
+// 清空所有
+function clearAll(){
+  Object.keys(counts).forEach(k=>counts[k]=0);
+  renderPalette();
+  updateStats();
+  checkLowStock();
+}
 // 渲染
 function renderPalette() {
   const container = document.getElementById("palette-container");
